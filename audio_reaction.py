@@ -40,20 +40,53 @@ def get_microphone_input_level():
         return 0.0
 
 
-#Draws sine wave based on the amplitude of the audio input 
+#Draws sine wave based on the amplitude of the audio input
+#Draws light map as squares  and changes color of square based on certain amplitude of audio input
 def draw_sine_wave(amplitude):
     screen.fill((0,0,0))
-    points = []
-    if amplitude > 10:
-        for x in range(screen_width):
-            y = screen_height/2 + int(amplitude * math.sin(x * 0.02))
-            points.append((x, y))
-    else:
-        points.append((0, screen_height/2))
-        points.append((screen_width, screen_height/2))
+##    points = []
+##    if amplitude > 10:
+##        for x in range(screen_width):
+##            y = screen_height/2 + int(amplitude * math.sin(x * 0.02))
+##            points.append((x, y))
+##    else:
+##        points.append((0, screen_height/2))
+##        points.append((screen_width, screen_height/2))
+##
+##    pygame.draw.lines(screen, (255, 255, 255), False, points, 2)
 
-    pygame.draw.lines(screen, (255, 255, 255), False, points, 2)
+
+#initialize square values
+    color = (255,0,0)
+    margin = 5
+    square_size = 15
+
+
+#Draw lights
+    for row in range(15):
+        for col in range(15):
+            if row == 0 or row == 15 or col == 0 or col == 15:
+                x = col * (square_size + margin) + margin
+                y = row * (square_size + margin) + margin
+                pygame.draw.rect(screen, color, pygame.Rect(x, y, square_size, square_size))
+            
+
+#Change the color of the lights based on amplitude
+    if amplitude > 20:
+        color = (0, 255, 255)
+        for row in range(15):
+            for col in range(15):
+                if row == 0 or row == 15 or col == 0 or col == 15:
+                    x = col * (square_size + margin) + margin
+                    y = row * (square_size + margin) + margin
+                    pygame.draw.rect(screen, color, pygame.Rect(x, y, square_size, square_size))
+            
+       
+            
     pygame.display.flip()
+    
+
+    
 
     
 #Clock Setup
