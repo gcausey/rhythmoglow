@@ -1,30 +1,29 @@
-#import pygame
 import math
 import pyaudio
 import time
 from rpi_ws281x import *
-import argparse
 
 LED_COUNT      = 300     # Number of LED pixels.
 LED_PIN        = 18      # GPIO pin connected to the pixels (18 uses PWM!).
-LED_PIN        = 10      # GPIO pin connected to the pixels (10 uses SPI /dev/spidev0.0).
 LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
 LED_DMA        = 10      # DMA channel to use for generating a signal (try 10)
 LED_BRIGHTNESS = 65      # Set to 0 for darkest and 255 for brightest
 LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
-def pulse(strip, color, pulse_duration=5, steps=100):
+def pulse(strip, color, pulse_duration):
     """Creates a pulsing effect by gradually increasing and decreasing brightness."""
+    steps = 100
     for i in range(steps):
         brightness = int((1 - abs((i % (steps // 2)) - (steps // 4)) / (steps // 4)) * 255)
         for j in range(strip.numPixels()):
-            strip.setPixelColor(j, Color(int(color >> 16) * brightness // 255, int((color >> 8) & 0xFF) * brightness />
+            strip.setPixelColor(j, Color(int(color >> 16) * brightness // 255, int((color >> 8) & 0xFF) * brightness // 255, int(color & 0xFF) * brightness // 255))
         strip.show()
         time.sleep(pulse_duration / steps)
 
-# Initialize Pygame
-#pygame.init()
+    for j in range(strip.numPixels()):
+        strip.setPixelColor(j, Color(0, 0, 0))
+    strip.show()
 
 #Audio variable initialization
 CHUNK = 1024
@@ -36,10 +35,10 @@ p = pyaudio.PyAudio()
 
 #Open audio stream - arguments are the initialized audio variables
 stream = p.open(format = FORMAT,
-                channels =CHANNELS,
-                rate=RATE,
-                input=True,
-                frames_per_buffer=CHUNK)
+                channels = CHANNELS,
+                rate = RATE,
+                input = True,
+                frames_per_buffer = CHUNK)
 
 
 #root mean sqaured (rms) is the average height of the sound wave in a period of time
@@ -53,39 +52,24 @@ def get_microphone_input_level():
         print("Error reading audio data: {}".format(ex))
         return 0.0
 
+if __name__ == '__main__':
 
+    strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+    strip.begin()
 
-#Draws light  based on certain amplitude of audio input
-def draw_light_map(amplitude):
-    if amplitude > 20:
-        theaterChaseRainbow(strip)
+    threshold = 20
 
+    pulsing = False
 
+    while True:
 
-#Clock Setup
-#clock = pygame.time.Clock()
+       amplitude_adjustment = get_microphone_input_level() / 50
+       amplitude  = max(10, amplitude_adjustment)
 
-running = True
-amplitude = 100
+       if amplitude > threshold and not pulsing:
+           pulse_duration = 3
+           pulse(strip, Color(255, 0, 0), pulse_duration)
+           pulsing = True
 
-# Create NeoPixel object with appropriate configuration.
-strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-# Intialize the library (must be called once before other functions).
-strip.begin()
-
-while running:
-   # for event in pygame.event.get():
-       # if event.type == pygame.QUIT:
-           # running = False
-
-    amplitude_adjustment = get_microphone_input_level() / 50
-    amplitude  = max(10, amplitude_adjustment)
-
-    draw_light_map(amplitude)
-    #print(get_microphone_input_level())
-    
-    #frame rate cap
-#    clock.tick(60)
-
-#pygame.quit()
-
+       if amplitude <= threshold and pulsing:
+           pulsing = False
