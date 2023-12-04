@@ -1,47 +1,39 @@
 import math
 import pyaudio
 import time
+import random
 from rpi_ws281x import *
 
-LED_COUNT      = 300     # Number of LED pixels.
-LED_PIN        = 18      # GPIO pin connected to the pixels (18 uses PWM!).
-LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
-LED_DMA        = 10      # DMA channel to use for generating a signal (try 10)
-LED_BRIGHTNESS = 65      # Set to 0 for darkest and 255 for brightest
-LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
-LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
+LED_COUNT = 300
+LED_PIN = 18
+LED_FREQ_HZ = 800000
+LED_DMA = 10
+LED_BRIGHTNESS = 65
+LED_INVERT = False
+LED_CHANNEL = 0
 
-def pulse(strip, color, pulse_duration):
-    """Creates a pulsing effect by gradually increasing and decreasing brightness."""
-    steps = 100
-    for i in range(steps):
-        brightness = int((1 - abs((i % (steps // 2)) - (steps // 4)) / (steps // 4)) * 255)
-        for j in range(strip.numPixels()):
-            strip.setPixelColor(j, Color(int(color >> 16) * brightness // 255, int((color >> 8) & 0xFF) * brightness // 255, int(color & 0xFF) * brightness // 255))
-        strip.show()
-        time.sleep(pulse_duration / steps)
-
-    for j in range(strip.numPixels()):
-        strip.setPixelColor(j, Color(0, 0, 0))
-    strip.show()
-
-#Audio variable initialization
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 
-p = pyaudio.PyAudio()
+def random_int():
+    return random.randint(0, 255)
 
-#Open audio stream - arguments are the initialized audio variables
-stream = p.open(format = FORMAT,
-                channels = CHANNELS,
-                rate = RATE,
-                input = True,
-                frames_per_buffer = CHUNK)
+def strip_on(strip):
+    r = random_int()
+    g = random_int()
+    b = random_int()
+    color = Color(r, g, b)
+    for j in range(strip.numPixels()):
+        strip.setPixelColor(j, color)
+    strip.show()
 
+def strip_off(strip):
+    for j in range(strip.numPixels()):
+        strip.setPixelColor(j, Color(0, 0, 0))
+    strip.show()
 
-#root mean sqaured (rms) is the average height of the sound wave in a period of time
 def get_microphone_input_level():
     try:
         data = stream.read(CHUNK, exception_on_overflow=False)
@@ -59,17 +51,20 @@ if __name__ == '__main__':
 
     threshold = 20
 
-    pulsing = False
+    p = pyaudio.PyAudio()
+
+    stream = p.open(format = FORMAT,
+                channels = CHANNELS,
+                rate = RATE,
+                input = True,
+                frames_per_buffer = CHUNK)
 
     while True:
 
        amplitude_adjustment = get_microphone_input_level() / 50
        amplitude  = max(10, amplitude_adjustment)
 
-       if amplitude > threshold and not pulsing:
-           pulse_duration = 3
-           pulse(strip, Color(255, 0, 0), pulse_duration)
-           pulsing = True
-
-       if amplitude <= threshold and pulsing:
-           pulsing = False
+       if amplitude > threshold:
+            strip_on(strip)
+       else:
+            strip_off(strip)
