@@ -1,3 +1,6 @@
+# Group 6
+# Audio Test Script
+
 import math
 import pyaudio
 import time
@@ -8,8 +11,8 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 41400
 
-RECORD_SECONDS = 10
-OUTPUT_FILE = "recorded_audio.wav"
+RECORD_SECONDS = 20
+OUTPUT_FILE = "record.wav"
 
 pyaud = pyaudio.PyAudio()
 
@@ -23,19 +26,16 @@ print("Recording...")
 
 frames = []
 
-# Record audio data
 for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
     data = stream.read(CHUNK)
     frames.append(data)
 
 print("Finished recording.")
 
-# Stop and close the stream
 stream.stop_stream()
 stream.close()
 pyaud.terminate()
 
-# Save recorded audio to a WAV file
 with wave.open(OUTPUT_FILE, 'wb') as wf:
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(pyaud.get_sample_size(FORMAT))

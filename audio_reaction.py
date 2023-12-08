@@ -1,3 +1,6 @@
+# Group 6
+# Final Script
+
 import math
 import pyaudio
 import time
@@ -8,7 +11,7 @@ LED_COUNT = 300
 LED_PIN = 18
 LED_FREQ_HZ = 800000
 LED_DMA = 10
-LED_BRIGHTNESS = 65
+LED_BRIGHTNESS = 150
 LED_INVERT = False
 LED_CHANNEL = 0
 
@@ -17,14 +20,35 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 
-def random_int():
+def random_integer():
     return random.randint(0, 255)
 
-def strip_on(strip):
-    r = random_int()
-    g = random_int()
-    b = random_int()
-    color = Color(r, g, b)
+def random_color():
+    return Color(random_integer(), random_integer(), random_integer())
+
+def contrast(previous):
+    r = (previous >> 16) + random.randint(-75, 75)
+    g = (previous >> 8 & 0xFF) + random.randint(-75, 75)
+    b = (previous & 0xFF) + random.randint(-75, 75)
+
+    min_threshold = 100
+    if all(c < min_threshold for c in (r, g, b)):
+        rand_index = random.randint(0, 2)
+        if rand_index == 0:
+            r = random.randint(min_threshold, 255)
+        elif rand_index == 1:
+            g = random.randint(min_threshold, 255)
+        else:
+            b = random.randint(min_threshold, 255)
+
+    r = max(0, min(255, r))
+    g = max(0, min(255, g))
+    b = max(0, min(255, b))
+
+    return Color(r, g, b)
+
+def strip_on(strip, previous):
+    color = contrast(previous)
     for j in range(strip.numPixels()):
         strip.setPixelColor(j, color)
     strip.show()
@@ -49,7 +73,7 @@ if __name__ == '__main__':
     strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
     strip.begin()
 
-    threshold = 20
+    threshold = 40
 
     p = pyaudio.PyAudio()
 
@@ -64,7 +88,9 @@ if __name__ == '__main__':
        amplitude_adjustment = get_microphone_input_level() / 50
        amplitude  = max(10, amplitude_adjustment)
 
+       previous = Color(0, 0, 0)
+
        if amplitude > threshold:
-            strip_on(strip)
+            previous = strip_on(strip, previous)
        else:
             strip_off(strip)
